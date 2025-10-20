@@ -4,283 +4,249 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>在庫管理 | ダッシュボード</title>
-  <link rel="icon" href="assets/tsh.png">
-  <!-- Lib eksternal yang kamu pakai -->
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#6d79ff">
+  <!-- Lib eksternal -->
   <script defer src="https://unpkg.com/html5-qrcode"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#0ea5e9">
- <style>
-/* ==== Soft Lavender Dashboard Theme (match mockup) ==== */
-:root{
-  --bg:#f6f7ff; --bg-2:#eef1ff; --panel:#ffffffcc; --card:#fff;
-  --ink:#1e293b; --muted:#7c86a3; --line:#e6e9ff;
-  --pri:#6d79ff; --pri-2:#8ba2ff; --acc:#ffb84e;
-  --shadow:0 20px 45px rgba(109,121,255,.12), 0 6px 20px rgba(2,8,23,.06);
-  --radius:18px;
-}
-*{box-sizing:border-box} html,body{height:100%}
-body{
-  margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Helvetica, Arial, sans-serif;
-  color:var(--ink); background:
-    radial-gradient(60% 60% at 0% 0%, #eef1ff 0%, #f9f9ff 60%, transparent 100%),
-    radial-gradient(60% 60% at 100% 0%, #f0f3ff 0%, #f9f9ff 55%, transparent 100%),
-    var(--bg);
-}
 
-/* Topbar */
-.topbar{
-  position:sticky; top:0; z-index:40; height:64px; padding:0 18px;
-  display:flex; align-items:center; gap:.75rem;
-  background:linear-gradient(180deg,#ffffff 0%, #f7f8ff 100%);
-  border-bottom:1px solid var(--line); box-shadow:0 4px 18px rgba(141,151,255,.10);
-}
-.brand{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:inherit}
-.brand-logo{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#8ba2ff,#6d79ff); color:#fff; font-weight:900}
-.brand-name{font-weight:800; letter-spacing:.2px}
-.top-actions{margin-left:auto;display:flex;align-items:center;gap:.5rem}
-.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid #dfe4ff;background:#fff;display:grid;place-items:center;cursor:pointer}
+  <!-- ========== THEME: Soft Lavender Dashboard ========== -->
+  <style>
+  :root{
+    --bg:#f6f7ff; --bg-2:#eef1ff; --panel:#ffffffcc; --card:#fff;
+    --ink:#1e293b; --muted:#7c86a3; --line:#e6e9ff;
+    --pri:#6d79ff; --pri-2:#8ba2ff; --acc:#ffb84e;
+    --shadow:0 20px 45px rgba(109,121,255,.12), 0 6px 20px rgba(2,8,23,.06);
+    --radius:18px;
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{
+    margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Helvetica, Arial, sans-serif;
+    color:var(--ink); background:
+      radial-gradient(60% 60% at 0% 0%, #eef1ff 0%, #f9f9ff 60%, transparent 100%),
+      radial-gradient(60% 60% at 100% 0%, #f0f3ff 0%, #f9f9ff 55%, transparent 100%),
+      var(--bg);
+  }
 
-/* Sidebar */
-.sidebar{
-  position:fixed; inset:64px auto 0 0; width:260px; overflow:auto;
-  background:var(--panel); backdrop-filter:saturate(160%) blur(10px);
-  border-right:1px solid var(--line); box-shadow:var(--shadow);
-  transform:translateX(0); transition:transform .2s ease;
-}
-.sidebar.-hide{transform:translateX(-100%)}
-.content{margin-left:260px; padding:24px; min-height:calc(100% - 64px)}
-@media (max-width:1024px){ .sidebar{transform:translateX(-100%)} .sidebar.-show{transform:translateX(0)} .content{margin-left:0} }
+  /* Topbar */
+  .topbar{
+    position:sticky; top:0; z-index:40; height:64px; padding:0 18px;
+    display:flex; align-items:center; gap:.75rem;
+    background:linear-gradient(180deg,#ffffff 0%, #f7f8ff 100%);
+    border-bottom:1px solid var(--line); box-shadow:0 4px 18px rgba(141,151,255,.10);
+  }
+  .brand{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:inherit}
+  .brand-logo{width:32px;height:32px;border-radius:10px;object-fit:contain}
+  .brand-name{font-weight:800; letter-spacing:.2px}
+  .top-actions{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+  .icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid #dfe4ff;background:#fff;display:grid;place-items:center;cursor:pointer}
 
-.nav{padding:14px}
-.nav-title{font-size:.78rem;color:#8892c4;margin:12px 12px 6px;text-transform:uppercase;letter-spacing:.08em}
-.nav-link{display:flex;align-items:center;gap:.6rem;padding:12px 14px;margin:6px 8px;border-radius:14px;color:#3b4470;text-decoration:none;border:1px solid transparent}
-.nav-link:hover{background:#f1f3ff}
-.nav-link.-active{background:linear-gradient(90deg,#eef1ff,#ffffff); border-color:#dfe4ff; box-shadow:inset 0 1px 0 #fff}
+  /* Sidebar */
+  .sidebar{
+    position:fixed; inset:64px auto 0 0; width:260px; overflow:auto;
+    background:var(--panel); backdrop-filter:saturate(160%) blur(10px);
+    border-right:1px solid var(--line); box-shadow:var(--shadow);
+    transform:translateX(0); transition:transform .2s ease;
+  }
+  .sidebar.-hide{transform:translateX(-100%)}
+  .content{margin-left:260px; padding:24px; min-height:calc(100% - 64px)}
+  @media (max-width:1024px){ .sidebar{transform:translateX(-100%)} .sidebar.-show{transform:translateX(0)} .content{margin-left:0} }
 
-/* Cards, buttons, inputs */
-.card{background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:var(--shadow); padding:18px; margin-block:16px}
-.card.-stretch{padding:0}
-.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
-.card-title{font-weight:800}
-.badge{padding:.23rem .55rem;border-radius:999px;font-size:.75rem;border:1px solid #dfe6ff;background:#eef1ff;color:#5660a9}
-.badge.-ok{background:#eaf8f1;border-color:#c9efd9;color:#116e46}
+  .nav{padding:14px}
+  .nav-title{font-size:.78rem;color:#8892c4;margin:12px 12px 6px;text-transform:uppercase;letter-spacing:.08em}
+  .nav-link{display:flex;align-items:center;gap:.6rem;padding:12px 14px;margin:6px 8px;border-radius:14px;color:#3b4470;text-decoration:none;border:1px solid transparent;background:transparent}
+  .nav-link:hover{background:#f1f3ff}
+  .nav-link.-active{background:linear-gradient(90deg,#eef1ff,#ffffff); border-color:#dfe4ff; box-shadow:inset 0 1px 0 #fff}
 
-.btn{
-  --bg:#f3f5ff; --fg:#313a70; --bd:#dfe4ff;
-  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-  padding:.7rem 1.05rem;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);
-  cursor:pointer;text-decoration:none;transition:transform .05s ease, box-shadow .15s ease, filter .15s ease
-}
-.btn:active{transform:translateY(1px)}
-.btn.-primary{--bg:linear-gradient(90deg,#8ba2ff,#6d79ff);--fg:#fff;--bd:#7e8eff; box-shadow:0 12px 24px rgba(109,121,255,.22)}
-.btn.-ghost{background:#fff; border-color:#dfe4ff}
+  /* Submenu collapse */
+  .submenu{display:none; margin:0 8px 4px 16px; border-left:2px solid var(--line); padding-left:6px}
+  .submenu.open{display:block}
+  .nav-link.sub{padding:10px 12px; margin:4px 4px; font-size:.92rem; color:#4a5190}
+  .sub-toggle{width:100%; text-align:left; display:flex; justify-content:space-between; align-items:center}
+  .sub-toggle .chev{opacity:.6; transition:transform .15s ease}
+  .sub-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
 
-.input,.select{width:100%;padding:.7rem .85rem;border-radius:12px;border:1px solid #dfe4ff;background:#fff}
-.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.form-grid label{display:grid;gap:6px;font-size:.92rem}
-.form-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end}
-/* Submenu collapse */
-.submenu{display:none; margin:0 8px 4px 16px; border-left:2px solid var(--line); padding-left:6px}
-.submenu.open{display:block}
-.nav-link.sub{padding:10px 12px; margin:4px 4px; font-size:.92rem; color:#4a5190}
-.sub-toggle{width:100%; text-align:left; display:flex; justify-content:space-between; align-items:center}
-.sub-toggle .chev{opacity:.6; transition:transform .15s ease}
-.sub-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
-  
-/* Layout grids */
-.grid{display:grid;grid-template-columns:2.2fr 2.2fr 1.6fr; gap:18px}
-@media (max-width:1200px){ .grid{grid-template-columns:1fr} }
+  /* Cards, buttons, inputs */
+  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:var(--shadow); padding:18px; margin-block:16px}
+  .card.-stretch{padding:0}
+  .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .card-title{font-weight:800}
+  .badge{padding:.23rem .55rem;border-radius:999px;font-size:.75rem;border:1px solid #dfe6ff;background:#eef1ff;color:#5660a9}
+  .badge.-ok{background:#eaf8f1;border-color:#c9efd9;color:#116e46}
 
-.kpi{padding:12px 6px;font-size:2.1rem;font-weight:800;color:#6d79ff}
-.kpi small{font-size:.9rem;font-weight:600;color:var(--muted);margin-left:.25rem}
+  .btn{
+    --bg:#f3f5ff; --fg:#313a70; --bd:#dfe4ff;
+    display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+    padding:.7rem 1.05rem;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);
+    cursor:pointer;text-decoration:none;transition:transform .05s ease, box-shadow .15s ease, filter .15s ease
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.-primary{--bg:linear-gradient(90deg,#8ba2ff,#6d79ff);--fg:#fff;--bd:#7e8eff; box-shadow:0 12px 24px rgba(109,121,255,.22)}
+  .btn.-ghost{background:#fff; border-color:#dfe4ff}
 
-.table-wrap{overflow:auto}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:.95rem;color:#3a4067}
-.table thead th{position:sticky;top:0;background:#f3f5ff;z-index:1}
+  .input,.select{width:100%;padding:.7rem .85rem;border-radius:12px;border:1px solid #dfe4ff;background:#fff}
+  .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .form-grid label{display:grid;gap:6px;font-size:.92rem}
+  .form-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end}
 
-/* Right-rail widgets (optional) */
-.widget-list{display:grid;gap:12px}
-.widget{border:1px solid var(--line);background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
-.widget h4{margin:0 0 10px;font-size:.95rem;color:#3a4067}
+  /* Layout grids */
+  .grid{display:grid;grid-template-columns:2.2fr 2.2fr 1.6fr; gap:18px}
+  @media (max-width:1200px){ .grid{grid-template-columns:1fr} }
 
-/* Page UX */
-.page{display:none;animation:fade .18s ease} .page.-active{display:block}
-.page-title{font-size:1.5rem;font-weight:900;color:#3140a6;margin:6px 2px}
-.footer{padding:22px 8px;color:#8a93b8}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .kpi{padding:12px 6px;font-size:2.1rem;font-weight:800;color:#6d79ff}
+  .kpi small{font-size:.9rem;font-weight:600;color:var(--muted);margin-left:.25rem}
 
-/* Modal */
-.modal{position:fixed;inset:0;background:rgba(49,64,166,.18);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:60}
-.modal.hidden{display:none}
-.modal-card{width:min(720px,92vw);background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
-.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
-.modal-title{font-weight:800;color:#3846bf}
-#qr-mount{min-height:320px;display:grid;place-items:center;border:1px dashed var(--line);background:#fff;margin:14px}
-</style>
+  .table-wrap{overflow:auto}
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:.95rem;color:#3a4067}
+  .table thead th{position:sticky;top:0;background:#f3f5ff;z-index:1}
 
+  /* Widgets (right rail) */
+  .widget-list{display:grid;gap:12px}
+  .widget{border:1px solid var(--line);background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
+  .widget h4{margin:0 0 10px;font-size:.95rem;color:#3a4067}
+
+  /* Page UX */
+  .page{display:none;animation:fade .18s ease} .page.-active{display:block}
+  .page-title{font-size:1.5rem;font-weight:900;color:#3140a6;margin:6px 2px}
+  .footer{padding:22px 8px;color:#8a93b8}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(49,64,166,.18);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:60}
+  .modal.hidden{display:none}
+  .modal-card{width:min(720px,92vw);background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .modal-title{font-weight:800;color:#3846bf}
+  #qr-mount{min-height:320px;display:grid;place-items:center;border:1px dashed var(--line);background:#fff;margin:14px}
+  </style>
 </head>
 <body>
   <!-- Topbar -->
   <header class="topbar" id="topbar">
     <button class="icon-btn" id="btnSidebar" aria-label="メニュー">☰</button>
     <a class="brand" href="#dashboard">
-  <img src="tsh.png" class="brand-logo" alt="tsh logo" />
-  <span class="brand-name">Inventory Control</span>
-</a>
-
+      <img src="tsh.png" class="brand-logo" alt="Tsh logo" />
+      <span class="brand-name">Inventory Control</span>
+    </a>
     <nav class="top-actions">
       <a class="btn -sm -primary" href="#qr-scan">QRをスキャン</a>
     </nav>
   </header>
 
-  <!-- Sidebar -->
+  <!-- Sidebar: Menu + Submenu -->
   <aside class="sidebar" id="sidebar">
-  <nav class="nav">
-    <!-- MENU: Home -->
-    <a class="nav-link" href="#dashboard" data-link>
-      <span>ダッシュボード</span>
-    </a>
+    <nav class="nav">
+      <a class="nav-link" href="#dashboard" data-link>ダッシュボード</a>
 
-    <!-- MENU: 在庫 (Inventory) -->
-    <button class="nav-link sub-toggle" type="button" data-sub="inv">
-      <span>在庫</span>
-      <span class="chev">▾</span>
-    </button>
-    <div class="submenu" id="sub-inv">
-      <a class="nav-link sub" href="#inventory" data-link>在庫一覧</a>
-      <a class="nav-link sub" href="#item-add" data-link>品名を追加</a>
-      <a class="nav-link sub" href="#sync" data-link>シート同期</a>
-    </div>
+      <button class="nav-link sub-toggle" type="button" data-sub="inv">
+        <span>在庫</span><span class="chev">▾</span>
+      </button>
+      <div class="submenu" id="sub-inv">
+        <a class="nav-link sub" href="#inventory" data-link>在庫一覧</a>
+        <a class="nav-link sub" href="#item-add" data-link>品名を追加</a>
+        <a class="nav-link sub" href="#sync" data-link>シート同期</a>
+      </div>
 
-    <!-- MENU: 入出力 -->
-    <button class="nav-link sub-toggle" type="button" data-sub="io">
-      <span>入出力</span><span class="chev">▾</span>
-    </button>
-    <div class="submenu" id="sub-io">
-      <a class="nav-link sub" href="#csv-import" data-link>CSV取込</a>
-      <a class="nav-link sub" href="#csv-export" data-link>CSV出力</a>
-      <a class="nav-link sub" href="#print" data-link>印刷</a>
-      <a class="nav-link sub" href="#qr-batch" data-link>QR一括出力</a>
-    </div>
+      <button class="nav-link sub-toggle" type="button" data-sub="io">
+        <span>入出力</span><span class="chev">▾</span>
+      </button>
+      <div class="submenu" id="sub-io">
+        <a class="nav-link sub" href="#csv-import" data-link>CSV取込</a>
+        <a class="nav-link sub" href="#csv-export" data-link>CSV出力</a>
+        <a class="nav-link sub" href="#print" data-link>印刷</a>
+        <a class="nav-link sub" href="#qr-batch" data-link>QR一括出力</a>
+      </div>
 
-    <!-- MENU: 締め処理 -->
-    <button class="nav-link sub-toggle" type="button" data-sub="close">
-      <span>締め処理</span><span class="chev">▾</span>
-    </button>
-    <div class="submenu" id="sub-close">
-      <a class="nav-link sub" href="#close-month" data-link>月次締め</a>
-      <a class="nav-link sub" href="#close-year" data-link>年度開始に設定</a>
-    </div>
+      <button class="nav-link sub-toggle" type="button" data-sub="close">
+        <span>締め処理</span><span class="chev">▾</span>
+      </button>
+      <div class="submenu" id="sub-close">
+        <a class="nav-link sub" href="#close-month" data-link>月次締め</a>
+        <a class="nav-link sub" href="#close-year" data-link>年度開始に設定</a>
+      </div>
 
-    <!-- MENU: ツール -->
-    <button class="nav-link sub-toggle" type="button" data-sub="tools">
-      <span>ツール</span><span class="chev">▾</span>
-    </button>
-    <div class="submenu" id="sub-tools">
-      <a class="nav-link sub" href="#qr-scan" data-link>QRをスキャン</a>
-      <a class="nav-link sub" href="#settings" data-link>設定</a>
-    </div>
+      <button class="nav-link sub-toggle" type="button" data-sub="tools">
+        <span>ツール</span><span class="chev">▾</span>
+      </button>
+      <div class="submenu" id="sub-tools">
+        <a class="nav-link sub" href="#qr-scan" data-link>QRをスキャン</a>
+        <a class="nav-link sub" href="#settings" data-link>設定</a>
+      </div>
 
-    <footer class="sidebar-footer"><small>© 2025 · Design by Wahyu</small></footer>
-  </nav>
-</aside>
-
+      <footer class="sidebar-footer"><small>© 2025 · Design by Wahyu</small></footer>
+    </nav>
+  </aside>
 
   <!-- Main -->
   <main class="content" id="content" tabindex="-1">
     <!-- Dashboard -->
     <section class="page -active" id="dashboard" data-page>
       <h1 class="page-title">ダッシュボード</h1>
+
       <div class="grid">
-        <div class="card">
-          <div class="card-head"><div class="card-title">現在在庫（合計）</div><span class="badge -ok">当月</span></div>
-          <div class="kpi"><span id="kpi-now">--</span><small>pcs</small></div>
-          <p class="muted">QRスキャンまたは手入力で更新されます。</p>
+        <!-- Col 1 -->
+        <div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">現在在庫（合計）</div><span class="badge -ok">当月</span></div>
+            <div class="kpi"><span id="kpi-now">--</span><small>pcs</small></div>
+            <p class="footer" style="padding:0;color:#6c75a2">QRスキャンまたは手入力で更新。</p>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">先月在庫</div></div>
+            <div class="kpi"><span id="kpi-last">--</span><small>pcs</small></div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-head"><div class="card-title">先月在庫</div></div>
-          <div class="kpi"><span id="kpi-last">--</span><small>pcs</small></div>
-          <p class="muted">「月次締め」で繰り上げ。</p>
+
+        <!-- Col 2 -->
+        <div class="card -stretch">
+          <div class="card-head"><div class="card-title">最近の更新</div></div>
+          <div class="table-wrap">
+            <table class="table" id="tbl-recent"><thead><tr><th>日時</th><th>ID</th><th>方法</th><th>重量(g)</th><th>PCS</th><th>換算(PCS)</th></tr></thead><tbody></tbody></table>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-head"><div class="card-title">年度残数</div><span class="badge">FY</span></div>
-          <div class="kpi"><span id="kpi-annual">--</span><small>pcs</small></div>
-          <p class="muted">「年度開始に設定」で初期化。</p>
-        </div>
+
+        <!-- Col 3 (widgets) -->
+        <aside class="widget-list">
+          <div class="widget">
+            <h4>Project Summary</h4>
+            <div class="badge -ok">October</div>
+            <p class="footer" style="padding:0;color:#6c75a2">在庫は安定しています。</p>
+          </div>
+          <div class="widget">
+            <h4>Notifications</h4>
+            <ul style="margin:0;padding-left:18px;color:#6c75a2">
+              <li>低在庫の品名があります</li>
+              <li>月次締めの時期です</li>
+            </ul>
+          </div>
+        </aside>
       </div>
-
-      <div class="card -stretch">
-        <div class="card-head"><div class="card-title">最近の更新</div><a class="btn -ghost -sm" href="#inventory">一覧へ</a></div>
-        <div class="table-wrap">
-          <table class="table" id="tbl-recent"><thead><tr><th>日時</th><th>ID</th><th>方法</th><th>重量(g)</th><th>PCS</th><th>換算(PCS)</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-      <div class="grid">
-  <!-- Col 1: 2 cards kecil -->
-  <div>
-    <div class="card">
-      <div class="card-head"><div class="card-title">Annual / KPI</div><span class="badge">FY</span></div>
-      <div class="kpi"><span id="kpi-annual">--</span><small>pcs</small></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title">先月在庫</div></div>
-      <div class="kpi"><span id="kpi-last">--</span><small>pcs</small></div>
-    </div>
-  </div>
-
-  <!-- Col 2: Recent Earnings (pakai table existing) -->
-  <div class="card -stretch">
-    <div class="card-head"><div class="card-title">最近の更新</div></div>
-    <div class="table-wrap">
-      <table class="table" id="tbl-recent">
-        <thead><tr><th>日時</th><th>ID</th><th>方法</th><th>重量(g)</th><th>PCS</th><th>換算(PCS)</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Col 3: Right widgets -->
-  <aside class="widget-list">
-    <div class="widget">
-      <h4>Project Summary</h4>
-      <div class="badge -ok">October</div>
-      <p class="footer" style="padding:0;color:#6c75a2">在庫は安定しています。</p>
-    </div>
-    <div class="widget">
-      <h4>Notifications</h4>
-      <ul style="margin:0;padding-left:18px;color:#6c75a2">
-        <li>低在庫の品名があります</li>
-        <li>月次締めの時期です</li>
-      </ul>
-    </div>
-  </aside>
-</div>
-
     </section>
 
     <!-- Inventory list -->
     <section class="page" id="inventory" data-page>
       <h1 class="page-title">在庫一覧</h1>
-      <div class="toolbar">
-        <input class="input" id="search" placeholder="品名 / ID を検索…">
-        <div class="toolbar-row">
-          <select class="select" id="view-cols">
-            <option value="basic">表示列: 基本</option>
-            <option value="full">表示列: 詳細</option>
-          </select>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">一覧</div>
+          <div class="toolbar" style="gap:10px;display:flex;align-items:center">
+            <input class="input" id="search" placeholder="品名 / ID を検索…">
+            <select class="select" id="view-cols">
+              <option value="basic">表示列: 基本</option>
+              <option value="full">表示列: 詳細</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <div class="table-wrap">
-        <table class="table" id="tbl-inventory">
-          <thead><tr>
-            <th>QR/ID</th><th>品名</th><th>重量/個(g)</th><th>先月在庫</th><th>現在在庫</th><th>年度開始在庫</th><th>年度残数</th><th>操作</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table class="table" id="tbl-inventory">
+            <thead><tr>
+              <th>QR/ID</th><th>品名</th><th>重量/個(g)</th><th>先月在庫</th><th>現在在庫</th><th>年度開始在庫</th><th>年度残数</th><th>操作</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -290,7 +256,7 @@ body{
       <div class="card -stretch"><div id="qr-mount">カメラ許可を与えてください…</div></div>
     </section>
 
-    <!-- Add item (renamed to 品名) -->
+    <!-- Add item -->
     <section class="page" id="item-add" data-page>
       <h1 class="page-title">品名を追加</h1>
       <form class="card form-grid" id="form-add">
@@ -317,12 +283,12 @@ body{
           <label style="display:flex;align-items:end;gap:.5rem"><input type="checkbox" id="qr-label" checked> ラベル(品名/ID)を付与</label>
           <label>ベースURL<input class="input" id="qr-base" placeholder="https://tohatsuwahyu.github.io/inventory/"></label>
         </div>
-        <div class="toolbar" style="justify-content:flex-start">
+        <div class="toolbar" style="justify-content:flex-start;gap:10px;display:flex;margin-top:8px">
           <button class="btn -primary" id="btn-qr-gen">生成</button>
           <button class="btn" id="btn-qr-zip">ZIPでダウンロード</button>
           <button class="btn -ghost" id="btn-qr-print">印刷用を開く</button>
         </div>
-        <div id="qr-preview" class="qr-preview"></div>
+        <div id="qr-preview" class="qr-preview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px"></div>
       </div>
     </section>
 
@@ -353,7 +319,7 @@ body{
           <button class="btn -ghost" id="st-clear" type="button">ローカル設定を全削除</button>
         </div>
       </form>
-      <div class="card"><p class="muted">保存内容は localStorage に保持され、下の機能が自動参照します。</p></div>
+      <div class="card"><p class="footer" style="padding:0">保存内容は localStorage に保持され、下の機能が自動参照します。</p></div>
     </section>
 
     <footer class="footer"><small>© 2025 Inventory Control · Design by Wahyu</small></footer>
@@ -376,36 +342,37 @@ body{
     </div>
   </div>
 
+  <!-- ========== SCRIPT: merged (settings/sheets/ui/app/scan/csv/qr-batch) ========== -->
   <script>
-  /* ===================== settings.js (adaptasi) ===================== */
+  /* ===== utils ===== */
   const $=(s,p=document)=>p.querySelector(s);
   const $$=(s,p=document)=>[...p.querySelectorAll(s)];
-  const LS={ endpoint:'ic.endpoint', token:'ic.token', qrBase:'ic.qrBase', fps:'ic.qrFps', qrbox:'ic.qrBox' };
 
+  /* ===================== settings.js ===================== */
+  const LS={ endpoint:'ic.endpoint', token:'ic.token', qrBase:'ic.qrBase', fps:'ic.qrFps', qrbox:'ic.qrBox' };
   function st_load(){
-    $('#st-endpoint').value=localStorage.getItem(LS.endpoint)||'';
-    $('#st-token').value=localStorage.getItem(LS.token)||'';
-    $('#st-qrbase').value=localStorage.getItem(LS.qrBase)||'';
-    $('#st-fps').value=localStorage.getItem(LS.fps)||'';
-    $('#st-qrbox').value=localStorage.getItem(LS.qrbox)||'';
+    $('#st-endpoint') && ($('#st-endpoint').value=localStorage.getItem(LS.endpoint)||'');
+    $('#st-token')    && ($('#st-token').value=localStorage.getItem(LS.token)||'');
+    $('#st-qrbase')   && ($('#st-qrbase').value=localStorage.getItem(LS.qrBase)||'');
+    $('#st-fps')      && ($('#st-fps').value=localStorage.getItem(LS.fps)||'');
+    $('#st-qrbox')    && ($('#st-qrbox').value=localStorage.getItem(LS.qrbox)||'');
   }
   function st_save(e){
     e.preventDefault();
     localStorage.setItem(LS.endpoint,($('#st-endpoint').value||'').trim());
     localStorage.setItem(LS.token,($('#st-token').value||'').trim());
     localStorage.setItem(LS.qrBase,($('#st-qrbase').value||'').trim());
-    if($('#st-fps').value) localStorage.setItem(LS.fps,$('#st-fps').value);
-    if($('#st-qrbox').value) localStorage.setItem(LS.qrbox,$('#st-qrbox').value);
+    if($('#st-fps')?.value) localStorage.setItem(LS.fps,$('#st-fps').value);
+    if($('#st-qrbox')?.value) localStorage.setItem(LS.qrbox,$('#st-qrbox').value);
     alert('保存しました。ページを更新します。'); location.reload();
   }
   function st_clear(){ if(!confirm('ローカルの設定を削除しますか？')) return; Object.values(LS).forEach(k=>localStorage.removeItem(k)); location.reload(); }
   $('#form-settings')?.addEventListener('submit',st_save);
   $('#st-clear')?.addEventListener('click',st_clear);
   st_load();
-  /* (kesesuaian dengan file aslimu: logic & key LS sama) — ref. :contentReference[oaicite:6]{index=6} */
 
-  /* ===================== sheets.js (adaptasi JSONP) ===================== */
-  const DEFAULT_ENDPOINT='https://script.google.com/macros/s/AKfycbzrm_fFXn6r1lFv7s3UWUqQTjJ47ggaxRQmkQ_vxAiE8xQZCnzYM6WMhMGph27eLBdjDg/exec';
+  /* ===================== sheets.js (JSONP) ===================== */
+  const DEFAULT_ENDPOINT='https://script.google.com/macros/s/AKfycbxvfLTfPzlSxfGGAGj-Hp-SRG-qT4jG2fxNoqLcy1VcW7i1bhIfnqIqw0Htg-RDtLtgGw/exec';
   function getEndpoint(){ return localStorage.getItem('ic.endpoint') || DEFAULT_ENDPOINT; }
   function getToken(){ return localStorage.getItem('ic.token') || ''; }
   function jsonp(params={}){
@@ -434,69 +401,46 @@ body{
     j=await jsonp({action:'qrJson',id,base,size:String(size),mode:'url'}); if(j?.ok && j.pngUrl) return {kind:'url',data:j.pngUrl};
     throw new Error(j?.error||'qrJson failed');
   }
-  /* Struktur & nama fungsi disamakan persis — ref. :contentReference[oaicite:7]{index=7} */
 
-  /* ===================== ui.js (router + sidebar) ===================== */
+  /* ===================== ui.js (router + sidebar + submenu) ===================== */
   const sidebar=$('#sidebar'); const btnSidebar=$('#btnSidebar'); const links=$$('[data-link]'); const pages=$$('[data-page]');
   function setActive(hash){ const id=(hash||'#dashboard').replace('#',''); links.forEach(a=>a.classList.toggle('-active',a.getAttribute('href')===`#${id}`)); pages.forEach(s=>s.classList.toggle('-active',s.id===id)); document.title=`在庫管理 | ${$('#'+id)?.querySelector('.page-title')?.textContent||'ページ'}`; localStorage.setItem('lastHash',`#${id}`);}
   function restore(){ const saved=localStorage.getItem('lastHash'); const target=location.hash || saved || '#dashboard'; setActive(target); if(!location.hash) history.replaceState(null,'',target); }
-    <script>
-// ===== submenu logic =====
-const SUB_KEY = 'nav.sub.open';            // simpan state submenu di LS
-function applySubState(){
-  const open = JSON.parse(localStorage.getItem(SUB_KEY) || '{}');
-  document.querySelectorAll('.sub-toggle').forEach(btn=>{
-    const key = btn.dataset.sub;
-    const panel = document.getElementById('sub-'+key);
-    const isOpen = !!open[key];
-    btn.setAttribute('aria-expanded', String(isOpen));
-    panel.classList.toggle('open', isOpen);
-  });
-}
-function saveSubState(){
-  const open = {};
-  document.querySelectorAll('.sub-toggle').forEach(btn=>{
-    const key = btn.dataset.sub;
-    open[key] = btn.getAttribute('aria-expanded') === 'true';
-  });
-  localStorage.setItem(SUB_KEY, JSON.stringify(open));
-}
-document.querySelectorAll('.sub-toggle').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const panel = document.getElementById('sub-'+btn.dataset.sub);
-    const now = btn.getAttribute('aria-expanded') === 'true';
-    btn.setAttribute('aria-expanded', String(!now));
-    panel.classList.toggle('open', !now);
-    saveSubState();
-  });
-});
-applySubState();
-
-// Saat pindah halaman, buka submenu yang memuat link aktif
-function openParentSubFor(hash){
-  const id = (hash||'#dashboard').replace('#','');
-  const activeLink = document.querySelector(`.submenu a[href="#${id}"]`);
-  if(activeLink){
-    const wrapper = activeLink.closest('.submenu');
-    const btn = wrapper && wrapper.previousElementSibling;
-    if(btn?.classList.contains('sub-toggle')){
-      btn.setAttribute('aria-expanded','true');
-      wrapper.classList.add('open');
-      saveSubState();
-    }
-  }
-}
-// Hook ke router yang sudah ada
-openParentSubFor(location.hash);
-window.addEventListener('hashchange', ()=>openParentSubFor(location.hash));
-</script>
-
   btnSidebar?.addEventListener('click',()=>{ const open=!sidebar.classList.contains('-show'); sidebar.classList.toggle('-show',open); btnSidebar.setAttribute('aria-expanded',String(open)); });
-  links.forEach(a=>a.addEventListener('click',()=>{ if(innerWidth<=980) sidebar.classList.remove('-show') }));
+  links.forEach(a=>a.addEventListener('click',()=>{ if(innerWidth<=1024) sidebar.classList.remove('-show') }));
   window.addEventListener('hashchange',()=>setActive(location.hash));
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') sidebar.classList.remove('-show') });
   restore();
-  /* (routing sama dengan punyamu) — ref. :contentReference[oaicite:8]{index=8} */
+
+  // Submenu state
+  const SUB_KEY='nav.sub.open';
+  function applySubState(){
+    const open = JSON.parse(localStorage.getItem(SUB_KEY) || '{}');
+    document.querySelectorAll('.sub-toggle').forEach(btn=>{
+      const key=btn.dataset.sub; const panel=document.getElementById('sub-'+key);
+      const isOpen=!!open[key]; btn.setAttribute('aria-expanded',String(isOpen)); panel.classList.toggle('open',isOpen);
+    });
+  }
+  function saveSubState(){
+    const open={}; document.querySelectorAll('.sub-toggle').forEach(btn=>{ const key=btn.dataset.sub; open[key]=btn.getAttribute('aria-expanded')==='true'; });
+    localStorage.setItem(SUB_KEY,JSON.stringify(open));
+  }
+  document.querySelectorAll('.sub-toggle').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const panel=document.getElementById('sub-'+btn.dataset.sub);
+      const now=btn.getAttribute('aria-expanded')==='true';
+      btn.setAttribute('aria-expanded',String(!now)); panel.classList.toggle('open',!now); saveSubState();
+    });
+  });
+  function openParentSubFor(hash){
+    const id=(hash||'#dashboard').replace('#','');
+    const activeLink=document.querySelector(`.submenu a[href="#${id}"]`);
+    if(activeLink){ const wrapper=activeLink.closest('.submenu'); const btn=wrapper && wrapper.previousElementSibling;
+      if(btn?.classList.contains('sub-toggle')){ btn.setAttribute('aria-expanded','true'); wrapper.classList.add('open'); saveSubState(); }
+    }
+  }
+  applySubState(); openParentSubFor(location.hash);
+  window.addEventListener('hashchange',()=>openParentSubFor(location.hash));
 
   /* ===================== app.js (load & table render) ===================== */
   async function loadAndRender(){
@@ -506,30 +450,29 @@ window.addEventListener('hashchange', ()=>openParentSubFor(location.hash));
     $('#kpi-last').textContent = sum(inventory,'lastMonth_pcs') || '--';
     $('#kpi-annual').textContent = (sum(inventory,'yearStart_pcs')||0) - (sum(inventory,'currentCount_pcs')||0);
 
-    const rb=$('#tbl-recent tbody'); rb.innerHTML='';
-    records.slice(-10).reverse().forEach(r=>{
+    const rb=$('#tbl-recent tbody'); if(rb){ rb.innerHTML=''; records.slice(-10).reverse().forEach(r=>{
       const tr=document.createElement('tr');
       tr.innerHTML=`<td>${r.ts||''}</td><td>${r.id||''}</td><td>${r.method||''}</td>
       <td>${r.inputWeight_g||''}</td><td>${r.inputCount_pcs||''}</td><td>${r.computed_pcs||''}</td>`;
       rb.appendChild(tr);
-    });
+    });}
 
-    const tb=$('#tbl-inventory tbody'); tb.innerHTML='';
-    inventory.forEach(it=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td>${it.id||''}</td><td>${it.name||''}</td><td>${it.unitWeight_g||''}</td>
-        <td>${it.lastMonth_pcs||0}</td><td>${it.currentCount_pcs||0}</td>
-        <td>${it.yearStart_pcs||0}</td><td>${(it.yearStart_pcs||0)-(it.currentCount_pcs||0)}</td>
-        <td><button class="btn -sm" data-input="${it.id}" data-name="${it.name||''}">入力</button></td>`;
-      tb.appendChild(tr);
-    });
-
-    $('#search')?.addEventListener('input',e=>{
-      const q=e.target.value.toLowerCase();
-      $$('#tbl-inventory tbody tr').forEach(tr=> tr.style.display = tr.textContent.toLowerCase().includes(q)?'':'none');
-    });
-    $$('#tbl-inventory [data-input]').forEach(b=> b.onclick=()=>openInputModal(b.dataset.input,b.dataset.name));
+    const tb=$('#tbl-inventory tbody'); if(tb){ tb.innerHTML='';
+      inventory.forEach(it=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${it.id||''}</td><td>${it.name||''}</td><td>${it.unitWeight_g||''}</td>
+          <td>${it.lastMonth_pcs||0}</td><td>${it.currentCount_pcs||0}</td>
+          <td>${it.yearStart_pcs||0}</td><td>${(it.yearStart_pcs||0)-(it.currentCount_pcs||0)}</td>
+          <td><button class="btn -sm" data-input="${it.id}" data-name="${it.name||''}">入力</button></td>`;
+        tb.appendChild(tr);
+      });
+      $('#search')?.addEventListener('input',e=>{
+        const q=e.target.value.toLowerCase();
+        $$('#tbl-inventory tbody tr').forEach(tr=> tr.style.display = tr.textContent.toLowerCase().includes(q)?'':'' );
+      });
+      $$('#tbl-inventory [data-input]').forEach(b=> b.onclick=()=>openInputModal(b.dataset.input,b.dataset.name));
+    }
   }
   function openInputModal(id,name=''){
     $('#m-id').value=id||''; $('#m-name').value=name||''; $('#m-weight').value=''; $('#m-count').value='';
@@ -554,12 +497,9 @@ window.addEventListener('hashchange', ()=>openParentSubFor(location.hash));
   $('#btnCloseMonth')?.addEventListener('click',async ()=>{ if(!confirm('月次締めを実行しますか？')) return; await closeMonth(); await loadAndRender(); alert('完了しました'); });
   $('#btnCloseYear')?.addEventListener('click',async ()=>{ if(!confirm('年度開始在庫に現在在庫を設定します。')) return; await closeYear(); await loadAndRender(); alert('完了しました'); });
   window.__openInputModal=openInputModal;
-  /* (logic diambil dari app.js-mu) — ref. :contentReference[oaicite:9]{index=9} */
 
-  /* ===================== scan.js (QR camera → modal input) ===================== */
-  function pickIdFromText(text){
-    try{ const u=new URL(text); const id=u.searchParams.get('id')||''; return id||text; }catch{ return text; }
-  }
+  /* ===================== scan.js (QR camera) ===================== */
+  function pickIdFromText(text){ try{ const u=new URL(text); const id=u.searchParams.get('id')||''; return id||text; }catch{ return text; } }
   function mountScanner(){
     const el=document.getElementById('qr-mount');
     if(!el || !window.Html5QrcodeScanner) return;
@@ -571,7 +511,6 @@ window.addEventListener('hashchange', ()=>openParentSubFor(location.hash));
   }
   window.addEventListener('hashchange',()=>{ if(location.hash==='#qr-scan') setTimeout(mountScanner,100); });
   if(location.hash==='#qr-scan') setTimeout(mountScanner,100);
-  /* (mengikuti strukturmu) — ref. :contentReference[oaicite:10]{index=10} */
 
   /* ===================== csv.js (export/import) ===================== */
   function exportCSVClient(rows){
@@ -594,35 +533,34 @@ window.addEventListener('hashchange', ()=>openParentSubFor(location.hash));
     reader.onload=()=>{ alert('取込完了（ローカルに反映する処理をここに拡張可能）'); };
     reader.readAsText(file);
   });
-  /* (handler sesuai csv.js-mu) — ref. :contentReference[oaicite:11]{index=11} */
 
-  /* ===================== QR batch (gabungan qr_batch_page.js) ===================== */
+  /* ===================== QR batch ===================== */
   const sizeEl=$('#qr-size'), marginEl=$('#qr-margin'), labelEl=$('#qr-label'), baseEl=$('#qr-base'), preview=$('#qr-preview');
   function sanitize(s){ return String(s||'').replace(/[\\/:*?"<>|]/g,'_') }
   function defaultBase(){ const fromSet=localStorage.getItem('ic.qrBase'); if(fromSet) return fromSet; const u=new URL('./',location.href); return u.href.replace(/index\.html?$/,''); }
-  function ensureBase(){ if(!baseEl.value) baseEl.value=defaultBase() }
+  function ensureBase(){ if(baseEl && !baseEl.value) baseEl.value=defaultBase() }
   async function generateQR(){
-    preview.innerHTML=''; ensureBase();
+    if(!preview) return; preview.innerHTML=''; ensureBase();
     const size=+sizeEl.value||600; const base=baseEl.value.trim(); const withLabel=labelEl.checked;
     let inv=[]; try{ ({inventory:inv=[]}=await fetchAll()) }catch(e){ alert('シート読み込み失敗: '+e.message); return; }
     for(const it of inv.filter(x=>x&&x.id)){
       let qr; try{ qr=await getQr({id:it.id,base,size}) }catch(err){ alert(`QR生成失敗 (${it.id}): ${err.message}`); continue }
-      const wrap=document.createElement('div'); wrap.className='p-2 grid place-items-center';
+      const wrap=document.createElement('div'); wrap.style="page-break-inside:avoid;display:inline-grid;place-items:center;gap:6px";
       const img=new Image(); img.style.width='160px'; img.style.height='160px'; img.alt=it.id;
       if(qr.kind==='b64'){ img.src='data:image/png;base64,'+qr.data; img.dataset.b64=qr.data } else { img.src=qr.data; img.dataset.b64='' }
       img.dataset.filename=`${sanitize(it.id)}.png`; wrap.appendChild(img);
-      if(withLabel){ const d=document.createElement('div'); d.className='text-xs text-center mt-1'; d.textContent=`${it.name||it.id} / ${it.id}`; wrap.appendChild(d) }
+      if(withLabel){ const d=document.createElement('div'); d.style.fontSize='12px'; d.textContent=`${it.name||it.id} / ${it.id}`; wrap.appendChild(d) }
       preview.appendChild(wrap);
     }
   }
   async function zipAll(){
-    const imgs=[...preview.querySelectorAll('img')]; if(!imgs.length) return alert('先に「生成」してください。');
+    if(!preview) return; const imgs=[...preview.querySelectorAll('img')]; if(!imgs.length) return alert('先に「生成」してください。');
     if(!imgs.every(im=>im.dataset.b64)){ alert('ZIPはベース64が必要です。Apps Scriptの authorizeFetch() 実行後、再生成してください。'); return }
     const zip=new JSZip(); for(const im of imgs){ zip.file(im.dataset.filename||'qr.png',im.dataset.b64,{base64:true}) }
     const blob=await zip.generateAsync({type:'blob'}); saveAs(blob,'qr_labels.zip');
   }
   function printAll(){
-    const imgs=[...preview.querySelectorAll('img')]; if(!imgs.length) return alert('先に「生成」してください。');
+    if(!preview) return; const imgs=[...preview.querySelectorAll('img')]; if(!imgs.length) return alert('先に「生成」してください。');
     const w=window.open('','_blank'); const items=imgs.map(im=>`<div style="page-break-inside:avoid;display:inline-block;margin:8mm;text-align:center">
       <img src="${im.dataset.b64?'data:image/png;base64,'+im.dataset.b64:im.src}" style="width:5cm;height:5cm;object-fit:contain" />
       <div style="font-size:10px;margin-top:2mm">${im.nextSibling?.textContent||''}</div></div>`).join('');
@@ -632,7 +570,6 @@ window.addEventListener('hashchange', ()=>openParentSubFor(location.hash));
   $('#btn-qr-zip')?.addEventListener('click',zipAll);
   $('#btn-qr-print')?.addEventListener('click',printAll);
   ensureBase();
-  /* (mengikuti strukturmu) — ref. :contentReference[oaicite:12]{index=12} */
 
   /* ==== start ==== */
   loadAndRender().catch(err=>alert('初期ロード失敗: '+err.message));
