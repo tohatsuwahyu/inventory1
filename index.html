@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>在庫管理 | ダッシュボード</title>
+  <!-- Lib eksternal yang kamu pakai -->
+  <script defer src="https://unpkg.com/html5-qrcode"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#0ea5e9">
+  <style>
+    /* ===== Bright theme + simple UI ===== */
+    :root{
+      --bg:#f7fbff; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+      --line:#e5eef8; --shadow:0 10px 30px rgba(2,8,23,.06);
+      --pri:#0ea5e9; --pri-700:#0284c7; --acc:#f59e0b;
+      --radius:16px;
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif;background:linear-gradient(180deg,#ffffff, var(--bg));color:var(--ink)}
+
+    /* Topbar */
+    .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:.5rem;height:56px;padding:0 12px;
+      background:linear-gradient(90deg,#38bdf8,#60a5fa);color:#fff;box-shadow:var(--shadow)}
+    .brand{display:flex;align-items:center;gap:.6rem;color:inherit;text-decoration:none}
+    .brand-logo{width:28px;height:28px;border-radius:8px;background:#fff;display:grid;place-items:center;color:#38bdf8;font-weight:900}
+    .brand-name{font-weight:800}
+    .top-actions{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+    .icon-btn{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;border:1px solid #cfe4fb;background:rgba(255,255,255,.2);color:#fff;cursor:pointer}
+
+    /* Sidebar → versi simple */
+    .sidebar{position:fixed;inset:56px auto 0 0;width:250px;background:#ffffffd9;backdrop-filter:saturate(160%) blur(8px);
+      border-right:1px solid var(--line);transform:translateX(0);transition:transform .2s ease;overflow:auto;box-shadow:var(--shadow)}
+    .sidebar.-hide{transform:translateX(-100%)} .content{margin-left:250px;padding:18px;min-height:calc(100% - 56px)}
+    @media (max-width:980px){.sidebar{transform:translateX(-100%)}.sidebar.-show{transform:translateX(0)}.content{margin-left:0}}
+
+    .nav{padding:14px}
+    .nav-title{font-size:.78rem;color:#0ea5e9;margin:10px 10px 6px;text-transform:uppercase;letter-spacing:.08em}
+    .nav-link{display:flex;align-items:center;gap:.6rem;padding:10px 12px;margin:4px 6px;border-radius:12px;color:#0f172a;text-decoration:none;border:1px solid transparent}
+    .nav-link:hover{background:#f0f7ff}
+    .nav-link.-active{background:linear-gradient(90deg,#e0f2fe,#fff);border-color:#cfe4fb}
+    .sidebar-footer{padding:12px 18px;color:var(--muted);font-size:.9rem}
+
+    /* Cards & form */
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-block:16px}
+    .card.-stretch{padding:0}
+    .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--line)}
+    .card-title{font-weight:800}
+    .badge{padding:.2rem .5rem;border-radius:999px;font-size:.75rem;border:1px solid #d9eefe;background:#ecfeff;color:#0369a1}
+    .badge.-ok{background:#ecfdf5;color:#065f46;border-color:#bbf7d0}
+    .kpi{padding:16px;font-size:2rem;font-weight:800;color:#0ea5e9}
+    .kpi small{font-size:.9rem;font-weight:600;color:var(--muted);margin-left:.25rem}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .input,.select{width:100%;padding:.65rem .8rem;border-radius:12px;border:1px solid #d7e6fb;background:#fff}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .form-grid label{display:grid;gap:6px;font-size:.9rem}
+    .form-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end}
+    .btn{--bg:#eaf6ff;--fg:#0f172a;--bd:#d6eaff;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.6rem 1rem;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer;transition:transform .05s ease,filter .15s ease;text-decoration:none}
+    .btn:active{transform:translateY(1px)}
+    .btn.-primary{--bg:linear-gradient(90deg,#38bdf8,#60a5fa);--fg:#fff;--bd:#60a5fa}
+    .btn.-ghost{background:transparent;border-color:#cfe4fb}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0}
+    .toolbar-row{display:flex;gap:10px}
+
+    /* Table */
+    .table-wrap{overflow:auto}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:.95rem}
+    .table thead th{position:sticky;top:0;background:#f0f7ff;z-index:1}
+
+    /* QR preview grid */
+    .qr-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px}
+    .qr-preview img{width:160px;height:160px;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#fff}
+
+    /* Pages */
+    .page{display:none;animation:fade .18s ease} .page.-active{display:block}
+    .page-title{font-size:1.4rem;font-weight:900;color:#0ea5e9;margin:8px 2px}
+    .footer{padding:24px 8px;color:var(--muted)}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(15,23,42,.35);display:grid;place-items:center;z-index:60}
+    .modal.hidden{display:none}
+    .modal-card{width:min(680px,92vw);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+    .modal-title{font-weight:800;color:#0ea5e9}
+    #qr-mount{min-height:320px;display:grid;place-items:center;border:1px dashed var(--line);background:#fff;margin:12px}
+  </style>
+</head>
+<body>
+  <!-- Topbar -->
+  <header class="topbar" id="topbar">
+    <button class="icon-btn" id="btnSidebar" aria-label="メニュー">☰</button>
+    <a class="brand" href="#dashboard">
+      <div class="brand-logo">IC</div>
+      <span class="brand-name">Inventory Control</span>
+    </a>
+    <nav class="top-actions">
+      <a class="btn -sm -primary" href="#qr-scan">QRをスキャン</a>
+    </nav>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav">
+      <div class="nav-section">
+        <div class="nav-title">メイン</div>
+        <a class="nav-link" href="#dashboard" data-link>ダッシュボード</a>
+        <a class="nav-link" href="#inventory" data-link>在庫一覧</a>
+        <a class="nav-link" href="#qr-scan" data-link>QRをスキャン</a>
+        <a class="nav-link" href="#item-add" data-link>品名を追加</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">入出力</div>
+        <a class="nav-link" href="#csv-import" data-link>CSV取込</a>
+        <a class="nav-link" href="#csv-export" data-link>CSV出力</a>
+        <a class="nav-link" href="#sync" data-link>シート同期</a>
+        <a class="nav-link" href="#qr-batch" data-link>QR一括出力</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">締め処理</div>
+        <a class="nav-link" href="#close-month" data-link>月次締め</a>
+        <a class="nav-link" href="#close-year" data-link>年度開始に設定</a>
+        <a class="nav-link" href="#print" data-link>印刷</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">その他</div>
+        <a class="nav-link" href="#settings" data-link>設定</a>
+        <a class="nav-link" href="/inventory/#dashboard">トップページ</a>
+      </div>
+      <footer class="sidebar-footer"><small>© 2025 · Design by Wahyu</small></footer>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="content" id="content" tabindex="-1">
+    <!-- Dashboard -->
+    <section class="page -active" id="dashboard" data-page>
+      <h1 class="page-title">ダッシュボード</h1>
+      <div class="grid">
+        <div class="card">
+          <div class="card-head"><div class="card-title">現在在庫（合計）</div><span class="badge -ok">当月</span></div>
+          <div class="kpi"><span id="kpi-now">--</span><small>pcs</small></div>
+          <p class="muted">QRスキャンまたは手入力で更新されます。</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">先月在庫</div></div>
+          <div class="kpi"><span id="kpi-last">--</span><small>pcs</small></div>
+          <p class="muted">「月次締め」で繰り上げ。</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">年度残数</div><span class="badge">FY</span></div>
+          <div class="kpi"><span id="kpi-annual">--</span><small>pcs</small></div>
+          <p class="muted">「年度開始に設定」で初期化。</p>
+        </div>
+      </div>
+
+      <div class="card -stretch">
+        <div class="card-head"><div class="card-title">最近の更新</div><a class="btn -ghost -sm" href="#inventory">一覧へ</a></div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-recent"><thead><tr><th>日時</th><th>ID</th><th>方法</th><th>重量(g)</th><th>PCS</th><th>換算(PCS)</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inventory list -->
+    <section class="page" id="inventory" data-page>
+      <h1 class="page-title">在庫一覧</h1>
+      <div class="toolbar">
+        <input class="input" id="search" placeholder="品名 / ID を検索…">
+        <div class="toolbar-row">
+          <select class="select" id="view-cols">
+            <option value="basic">表示列: 基本</option>
+            <option value="full">表示列: 詳細</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="tbl-inventory">
+          <thead><tr>
+            <th>QR/ID</th><th>品名</th><th>重量/個(g)</th><th>先月在庫</th><th>現在在庫</th><th>年度開始在庫</th><th>年度残数</th><th>操作</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- QR scan -->
+    <section class="page" id="qr-scan" data-page>
+      <h1 class="page-title">QRをスキャン</h1>
+      <div class="card -stretch"><div id="qr-mount">カメラ許可を与えてください…</div></div>
+    </section>
+
+    <!-- Add item (renamed to 品名) -->
+    <section class="page" id="item-add" data-page>
+      <h1 class="page-title">品名を追加</h1>
+      <form class="card form-grid" id="form-add">
+        <label>品名ID<input class="input" name="id" required></label>
+        <label>品名<input class="input" name="name"></label>
+        <label>重量/個 (g)<input class="input" name="unitWeight_g" inputmode="decimal"></label>
+        <label>計数モード<select class="select" name="mode"><option value="weight">重量</option><option value="count">個数</option></select></label>
+        <label>年度開始在庫(PCS)<input class="input" name="yearStart_pcs" inputmode="numeric"></label>
+        <div class="form-actions"><button class="btn -primary" type="submit">保存</button></div>
+      </form>
+    </section>
+
+    <!-- CSV/Sync/QR Batch/Close/Print/Settings -->
+    <section class="page" id="csv-import" data-page><h1 class="page-title">CSV取込</h1><div class="card"><input class="input" type="file" accept=".csv" id="csvIn"><button class="btn -primary" id="btnCsvIn">取込</button></div></section>
+    <section class="page" id="csv-export" data-page><h1 class="page-title">CSV出力</h1><div class="card"><button class="btn -primary" id="btnCsvOut">ダウンロード</button></div></section>
+    <section class="page" id="sync" data-page><h1 class="page-title">シート同期</h1><div class="card"><button class="btn -primary" id="btnSync">同期</button></div></section>
+
+    <section class="page" id="qr-batch" data-page>
+      <h1 class="page-title">QR一括出力</h1>
+      <div class="card">
+        <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+          <label>サイズ(px)<input class="input" id="qr-size" value="600"></label>
+          <label>余白(px)<input class="input" id="qr-margin" value="4"></label>
+          <label style="display:flex;align-items:end;gap:.5rem"><input type="checkbox" id="qr-label" checked> ラベル(品名/ID)を付与</label>
+          <label>ベースURL<input class="input" id="qr-base" placeholder="https://tohatsuwahyu.github.io/inventory/"></label>
+        </div>
+        <div class="toolbar" style="justify-content:flex-start">
+          <button class="btn -primary" id="btn-qr-gen">生成</button>
+          <button class="btn" id="btn-qr-zip">ZIPでダウンロード</button>
+          <button class="btn -ghost" id="btn-qr-print">印刷用を開く</button>
+        </div>
+        <div id="qr-preview" class="qr-preview"></div>
+      </div>
+    </section>
+
+    <section class="page" id="close-month" data-page><h1 class="page-title">月次締め</h1><div class="card"><button class="btn -primary" id="btnCloseMonth">実行</button></div></section>
+    <section class="page" id="close-year" data-page><h1 class="page-title">年度開始に設定</h1><div class="card"><button class="btn -primary" id="btnCloseYear">実行</button></div></section>
+    <section class="page" id="print" data-page><h1 class="page-title">印刷</h1><div class="card"><button class="btn" id="btnPrintTable">一覧を印刷</button></div></section>
+
+    <section class="page" id="settings" data-page>
+      <h1 class="page-title">設定</h1>
+      <form class="card form-grid" id="form-settings">
+        <label>Web App URL（Apps Script /exec）
+          <input class="input" id="st-endpoint" placeholder="https://script.google.com/macros/s/…/exec" required>
+        </label>
+        <label>APIトークン（任意）
+          <input class="input" id="st-token" placeholder="Script properties の API_TOKEN と一致">
+        </label>
+        <label>QR ベースURL
+          <input class="input" id="st-qrbase" placeholder="https://tohatsuwahyu.github.io/inventory/">
+        </label>
+        <label>カメラFPS（任意）
+          <input class="input" id="st-fps" inputmode="numeric" placeholder="例: 8">
+        </label>
+        <label>QR枠サイズ（px・任意）
+          <input class="input" id="st-qrbox" inputmode="numeric" placeholder="例: 240">
+        </label>
+        <div class="form-actions">
+          <button class="btn -primary" type="submit">保存して更新</button>
+          <button class="btn -ghost" id="st-clear" type="button">ローカル設定を全削除</button>
+        </div>
+      </form>
+      <div class="card"><p class="muted">保存内容は localStorage に保持され、下の機能が自動参照します。</p></div>
+    </section>
+
+    <footer class="footer"><small>© 2025 Inventory Control · Design by Wahyu</small></footer>
+  </main>
+
+  <!-- 入力モーダル -->
+  <div id="modal-input" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title" id="m-title">在庫入力</div>
+        <button class="icon-btn" id="m-close" aria-label="閉じる">✕</button>
+      </div>
+      <form id="m-form" class="form-grid">
+        <label>品名ID<input class="input" id="m-id" required readonly></label>
+        <label>品名<input class="input" id="m-name" readonly></label>
+        <label>重量入力 (g)<input class="input" id="m-weight" inputmode="decimal" placeholder="例: 1200"></label>
+        <label>個数入力 (pcs)<input class="input" id="m-count" inputmode="numeric" placeholder="例: 500"></label>
+        <div class="form-actions"><button type="submit" class="btn -primary">OK</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  /* ===================== settings.js (adaptasi) ===================== */
+  const $=(s,p=document)=>p.querySelector(s);
+  const $$=(s,p=document)=>[...p.querySelectorAll(s)];
+  const LS={ endpoint:'ic.endpoint', token:'ic.token', qrBase:'ic.qrBase', fps:'ic.qrFps', qrbox:'ic.qrBox' };
+
+  function st_load(){
+    $('#st-endpoint').value=localStorage.getItem(LS.endpoint)||'';
+    $('#st-token').value=localStorage.getItem(LS.token)||'';
+    $('#st-qrbase').value=localStorage.getItem(LS.qrBase)||'';
+    $('#st-fps').value=localStorage.getItem(LS.fps)||'';
+    $('#st-qrbox').value=localStorage.getItem(LS.qrbox)||'';
+  }
+  function st_save(e){
+    e.preventDefault();
+    localStorage.setItem(LS.endpoint,($('#st-endpoint').value||'').trim());
+    localStorage.setItem(LS.token,($('#st-token').value||'').trim());
+    localStorage.setItem(LS.qrBase,($('#st-qrbase').value||'').trim());
+    if($('#st-fps').value) localStorage.setItem(LS.fps,$('#st-fps').value);
+    if($('#st-qrbox').value) localStorage.setItem(LS.qrbox,$('#st-qrbox').value);
+    alert('保存しました。ページを更新します。'); location.reload();
+  }
+  function st_clear(){ if(!confirm('ローカルの設定を削除しますか？')) return; Object.values(LS).forEach(k=>localStorage.removeItem(k)); location.reload(); }
+  $('#form-settings')?.addEventListener('submit',st_save);
+  $('#st-clear')?.addEventListener('click',st_clear);
+  st_load();
+  /* (kesesuaian dengan file aslimu: logic & key LS sama) — ref. :contentReference[oaicite:6]{index=6} */
+
+  /* ===================== sheets.js (adaptasi JSONP) ===================== */
+  const DEFAULT_ENDPOINT='https://script.google.com/macros/s/AKfycbxvfLTfPzlSxfGGAGj-Hp-SRG-qT4jG2fxNoqLcy1VcW7i1bhIfnqIqw0Htg-RDtLtgGw/exec';
+  function getEndpoint(){ return localStorage.getItem('ic.endpoint') || DEFAULT_ENDPOINT; }
+  function getToken(){ return localStorage.getItem('ic.token') || ''; }
+  function jsonp(params={}){
+    return new Promise((resolve,reject)=>{
+      const cb='cb_'+Math.random().toString(36).slice(2);
+      const url=new URL(getEndpoint());
+      const token=getToken(); if(token) url.searchParams.set('token',token);
+      Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,String(v)));
+      url.searchParams.set('callback',cb);
+      const s=document.createElement('script'); s.src=url.toString(); s.async=true;
+      let done=false;
+      window[cb]=(data)=>{done=true; resolve(data); cleanup();}
+      s.onerror=()=>{ if(!done){ reject(new Error('JSONP load error')); cleanup(); } }
+      function cleanup(){ delete window[cb]; s.remove(); }
+      document.head.appendChild(s);
+    });
+  }
+  const b64=(o)=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+  async function fetchAll(){ const j=await jsonp({action:'pull'}); if(!j?.ok) throw new Error(j?.error||'pull failed'); return j; }
+  async function recordInput(p){ const j=await jsonp({action:'recordInput',pb64:b64(p)}); if(!j?.ok) throw new Error(j?.error||'recordInput failed'); return j; }
+  async function upsertInventory(list){ const j=await jsonp({action:'upsertInventory',pb64:b64(list)}); if(!j?.ok) throw new Error(j?.error||'upsertInventory failed'); return j; }
+  async function closeMonth(){ const j=await jsonp({action:'closeMonth'}); if(!j?.ok) throw new Error(j?.error||'closeMonth'); return j; }
+  async function closeYear(){ const j=await jsonp({action:'closeYear'}); if(!j?.ok) throw new Error(j?.error||'closeYear'); return j; }
+  async function getQr({id,base,size=600}){
+    let j=await jsonp({action:'qrJson',id,base,size:String(size),mode:'b64'}); if(j?.ok && j.pngBase64) return {kind:'b64',data:j.pngBase64};
+    j=await jsonp({action:'qrJson',id,base,size:String(size),mode:'url'}); if(j?.ok && j.pngUrl) return {kind:'url',data:j.pngUrl};
+    throw new Error(j?.error||'qrJson failed');
+  }
+  /* Struktur & nama fungsi disamakan persis — ref. :contentReference[oaicite:7]{index=7} */
+
+  /* ===================== ui.js (router + sidebar) ===================== */
+  const sidebar=$('#sidebar'); const btnSidebar=$('#btnSidebar'); const links=$$('[data-link]'); const pages=$$('[data-page]');
+  function setActive(hash){ const id=(hash||'#dashboard').replace('#',''); links.forEach(a=>a.classList.toggle('-active',a.getAttribute('href')===`#${id}`)); pages.forEach(s=>s.classList.toggle('-active',s.id===id)); document.title=`在庫管理 | ${$('#'+id)?.querySelector('.page-title')?.textContent||'ページ'}`; localStorage.setItem('lastHash',`#${id}`);}
+  function restore(){ const saved=localStorage.getItem('lastHash'); const target=location.hash || saved || '#dashboard'; setActive(target); if(!location.hash) history.replaceState(null,'',target); }
+  btnSidebar?.addEventListener('click',()=>{ const open=!sidebar.classList.contains('-show'); sidebar.classList.toggle('-show',open); btnSidebar.setAttribute('aria-expanded',String(open)); });
+  links.forEach(a=>a.addEventListener('click',()=>{ if(innerWidth<=980) sidebar.classList.remove('-show') }));
+  window.addEventListener('hashchange',()=>setActive(location.hash));
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') sidebar.classList.remove('-show') });
+  restore();
+  /* (routing sama dengan punyamu) — ref. :contentReference[oaicite:8]{index=8} */
+
+  /* ===================== app.js (load & table render) ===================== */
+  async function loadAndRender(){
+    const { inventory=[], records=[] } = await fetchAll();
+    const sum=(arr,k)=>arr.reduce((a,b)=>a+(+b[k]||0),0);
+    $('#kpi-now').textContent = sum(inventory,'currentCount_pcs') || '--';
+    $('#kpi-last').textContent = sum(inventory,'lastMonth_pcs') || '--';
+    $('#kpi-annual').textContent = (sum(inventory,'yearStart_pcs')||0) - (sum(inventory,'currentCount_pcs')||0);
+
+    const rb=$('#tbl-recent tbody'); rb.innerHTML='';
+    records.slice(-10).reverse().forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.ts||''}</td><td>${r.id||''}</td><td>${r.method||''}</td>
+      <td>${r.inputWeight_g||''}</td><td>${r.inputCount_pcs||''}</td><td>${r.computed_pcs||''}</td>`;
+      rb.appendChild(tr);
+    });
+
+    const tb=$('#tbl-inventory tbody'); tb.innerHTML='';
+    inventory.forEach(it=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${it.id||''}</td><td>${it.name||''}</td><td>${it.unitWeight_g||''}</td>
+        <td>${it.lastMonth_pcs||0}</td><td>${it.currentCount_pcs||0}</td>
+        <td>${it.yearStart_pcs||0}</td><td>${(it.yearStart_pcs||0)-(it.currentCount_pcs||0)}</td>
+        <td><button class="btn -sm" data-input="${it.id}" data-name="${it.name||''}">入力</button></td>`;
+      tb.appendChild(tr);
+    });
+
+    $('#search')?.addEventListener('input',e=>{
+      const q=e.target.value.toLowerCase();
+      $$('#tbl-inventory tbody tr').forEach(tr=> tr.style.display = tr.textContent.toLowerCase().includes(q)?'':'none');
+    });
+    $$('#tbl-inventory [data-input]').forEach(b=> b.onclick=()=>openInputModal(b.dataset.input,b.dataset.name));
+  }
+  function openInputModal(id,name=''){
+    $('#m-id').value=id||''; $('#m-name').value=name||''; $('#m-weight').value=''; $('#m-count').value='';
+    $('#modal-input').classList.remove('hidden');
+  }
+  $('#m-close')?.addEventListener('click',()=>$('#modal-input').classList.add('hidden'));
+  $('#m-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const id=$('#m-id').value.trim();
+    const inputWeight_g=+$('#m-weight').value||0;
+    const inputCount_pcs=+$('#m-count').value||0;
+    await recordInput({id,inputWeight_g,inputCount_pcs,computed_pcs:inputCount_pcs});
+    $('#modal-input').classList.add('hidden');
+    await loadAndRender();
+  });
+  $('#form-add')?.addEventListener('submit',async e=>{
+    e.preventDefault(); const fd=new FormData(e.target);
+    const obj=Object.fromEntries(fd.entries());
+    obj.unitWeight_g=+obj.unitWeight_g||0; obj.yearStart_pcs=+obj.yearStart_pcs||0;
+    await upsertInventory([obj]); e.target.reset(); alert('保存しました'); location.hash='#inventory'; await loadAndRender();
+  });
+  $('#btnCloseMonth')?.addEventListener('click',async ()=>{ if(!confirm('月次締めを実行しますか？')) return; await closeMonth(); await loadAndRender(); alert('完了しました'); });
+  $('#btnCloseYear')?.addEventListener('click',async ()=>{ if(!confirm('年度開始在庫に現在在庫を設定します。')) return; await closeYear(); await loadAndRender(); alert('完了しました'); });
+  window.__openInputModal=openInputModal;
+  /* (logic diambil dari app.js-mu) — ref. :contentReference[oaicite:9]{index=9} */
+
+  /* ===================== scan.js (QR camera → modal input) ===================== */
+  function pickIdFromText(text){
+    try{ const u=new URL(text); const id=u.searchParams.get('id')||''; return id||text; }catch{ return text; }
+  }
+  function mountScanner(){
+    const el=document.getElementById('qr-mount');
+    if(!el || !window.Html5QrcodeScanner) return;
+    const onScan=(decoded)=>{ const id=pickIdFromText(decoded||''); if(!id) return; if(window.__openInputModal) window.__openInputModal(id,''); };
+    const onErr=()=>{};
+    const scanner=new Html5QrcodeScanner('qr-mount',{ fps: localStorage.getItem(LS.fps)?+localStorage.getItem(LS.fps):8,
+      qrbox: localStorage.getItem(LS.qrbox)?+localStorage.getItem(LS.qrbox):240, rememberLastUsedCamera:true, showTorchButtonIfSupported:true }, false);
+    scanner.render(onScan,onErr);
+  }
+  window.addEventListener('hashchange',()=>{ if(location.hash==='#qr-scan') setTimeout(mountScanner,100); });
+  if(location.hash==='#qr-scan') setTimeout(mountScanner,100);
+  /* (mengikuti strukturmu) — ref. :contentReference[oaicite:10]{index=10} */
+
+  /* ===================== csv.js (export/import) ===================== */
+  function exportCSVClient(rows){
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`inventory-${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+  $('#btnCsvOut')?.addEventListener('click', async ()=>{
+    const j=await fetchAll();
+    const rows=[['id','name','unitWeight_g','mode','lastMonth_pcs','currentWeight_g','currentCount_pcs','updatedAt']];
+    for(const it of (j.inventory||[])){
+      rows.push([it.id||'',it.name||'',it.unitWeight_g||0,it.mode||'weight',it.lastMonth_pcs||0,it.currentWeight_g||0,it.currentCount_pcs||0,it.updatedAt||'']);
+    }
+    exportCSVClient(rows);
+  });
+  $('#btnCsvIn')?.addEventListener('click',()=>$('#csvIn').click());
+  $('#csvIn')?.addEventListener('change',e=>{
+    const file=e.target.files?.[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{ alert('取込完了（ローカルに反映する処理をここに拡張可能）'); };
+    reader.readAsText(file);
+  });
+  /* (handler sesuai csv.js-mu) — ref. :contentReference[oaicite:11]{index=11} */
+
+  /* ===================== QR batch (gabungan qr_batch_page.js) ===================== */
+  const sizeEl=$('#qr-size'), marginEl=$('#qr-margin'), labelEl=$('#qr-label'), baseEl=$('#qr-base'), preview=$('#qr-preview');
+  function sanitize(s){ return String(s||'').replace(/[\\/:*?"<>|]/g,'_') }
+  function defaultBase(){ const fromSet=localStorage.getItem('ic.qrBase'); if(fromSet) return fromSet; const u=new URL('./',location.href); return u.href.replace(/index\.html?$/,''); }
+  function ensureBase(){ if(!baseEl.value) baseEl.value=defaultBase() }
+  async function generateQR(){
+    preview.innerHTML=''; ensureBase();
+    const size=+sizeEl.value||600; const base=baseEl.value.trim(); const withLabel=labelEl.checked;
+    let inv=[]; try{ ({inventory:inv=[]}=await fetchAll()) }catch(e){ alert('シート読み込み失敗: '+e.message); return; }
+    for(const it of inv.filter(x=>x&&x.id)){
+      let qr; try{ qr=await getQr({id:it.id,base,size}) }catch(err){ alert(`QR生成失敗 (${it.id}): ${err.message}`); continue }
+      const wrap=document.createElement('div'); wrap.className='p-2 grid place-items-center';
+      const img=new Image(); img.style.width='160px'; img.style.height='160px'; img.alt=it.id;
+      if(qr.kind==='b64'){ img.src='data:image/png;base64,'+qr.data; img.dataset.b64=qr.data } else { img.src=qr.data; img.dataset.b64='' }
+      img.dataset.filename=`${sanitize(it.id)}.png`; wrap.appendChild(img);
+      if(withLabel){ const d=document.createElement('div'); d.className='text-xs text-center mt-1'; d.textContent=`${it.name||it.id} / ${it.id}`; wrap.appendChild(d) }
+      preview.appendChild(wrap);
+    }
+  }
+  async function zipAll(){
+    const imgs=[...preview.querySelectorAll('img')]; if(!imgs.length) return alert('先に「生成」してください。');
+    if(!imgs.every(im=>im.dataset.b64)){ alert('ZIPはベース64が必要です。Apps Scriptの authorizeFetch() 実行後、再生成してください。'); return }
+    const zip=new JSZip(); for(const im of imgs){ zip.file(im.dataset.filename||'qr.png',im.dataset.b64,{base64:true}) }
+    const blob=await zip.generateAsync({type:'blob'}); saveAs(blob,'qr_labels.zip');
+  }
+  function printAll(){
+    const imgs=[...preview.querySelectorAll('img')]; if(!imgs.length) return alert('先に「生成」してください。');
+    const w=window.open('','_blank'); const items=imgs.map(im=>`<div style="page-break-inside:avoid;display:inline-block;margin:8mm;text-align:center">
+      <img src="${im.dataset.b64?'data:image/png;base64,'+im.dataset.b64:im.src}" style="width:5cm;height:5cm;object-fit:contain" />
+      <div style="font-size:10px;margin-top:2mm">${im.nextSibling?.textContent||''}</div></div>`).join('');
+    w.document.write(`<html><head><meta charset="utf-8"><title>QR Print</title><style>@page{size:A4;margin:10mm}body{margin:0}</style></head><body>${items}</body></html>`); w.document.close(); w.focus();
+  }
+  $('#btn-qr-gen')?.addEventListener('click',generateQR);
+  $('#btn-qr-zip')?.addEventListener('click',zipAll);
+  $('#btn-qr-print')?.addEventListener('click',printAll);
+  ensureBase();
+  /* (mengikuti strukturmu) — ref. :contentReference[oaicite:12]{index=12} */
+
+  /* ==== start ==== */
+  loadAndRender().catch(err=>alert('初期ロード失敗: '+err.message));
+  </script>
+</body>
+</html>
