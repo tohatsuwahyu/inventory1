@@ -127,6 +127,88 @@
   .modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
   .modal-title{font-weight:800;color:#3846bf}
   #qr-mount{min-height:320px;display:grid;place-items:center;border:1px dashed var(--line);background:#fff;margin:14px}
+    /* === Responsive polish === */
+
+/* Konten & card padding adaptif */
+.content{ padding: clamp(14px, 3vw, 24px); }
+.card{ padding: clamp(12px, 2.2vw, 18px); border-radius: 20px; }
+
+/* Judul adaptif */
+.page-title{ font-size: clamp(1.15rem, 0.9rem + 1.2vw, 1.5rem); }
+
+/* Grid dashboard: 3→2→1 kolom */
+.grid{ display:grid; grid-template-columns: 2fr 2fr 1.6fr; gap: clamp(12px, 2vw, 18px); }
+@media (max-width: 1200px){ .grid{ grid-template-columns: 1fr 1fr; } }
+@media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+
+/* ===== Table: tetap satu baris + scroll halus saat layar kecil ===== */
+.table-wrap{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(90deg,#fff 80%, transparent), linear-gradient(90deg,transparent, #fff 20%) 100% 0 / 20% 100% no-repeat;
+  border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+}
+.table{
+  width: 100%;
+  min-width: 720px;            /* cegah pecah huruf seperti '日↵時' */
+  border-collapse: collapse;
+  table-layout: auto;
+}
+@media (max-width: 640px){ .table{ min-width: 560px; } }
+.table thead th{
+  white-space: nowrap;         /* header selalu 1 baris */
+  font-weight: 700;
+  background: #f3f5ff;
+}
+.table th, .table td{
+  padding: 12px 12px;
+  vertical-align: middle;
+  color:#3a4067;
+}
+.table tbody tr:nth-child(odd){ background: #fafbff; }
+.table tbody tr:hover{ background: #eef2ff; }
+
+/* Badge & teks kecil agar tidak meluber */
+.badge{ white-space: nowrap; }
+
+/* Sidebar & topbar spacing di HP */
+@media (max-width: 420px){
+  .brand-name{ font-size:.95rem }
+  .icon-btn{ width:34px; height:34px; border-radius:10px }
+}
+
+/* QR preview grid agar rapih di HP */
+.qr-preview{ grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px; }
+.qr-preview img{ width: 140px; height: 140px; }
+/* ===== Table -> Card mode (mobile) ===== */
+@media (max-width: 520px){
+  .table{ min-width: 0; width:100% }
+  .table thead{ display:none }
+  .table tbody{ display:grid; gap:10px }
+  .table tbody tr{
+    display:grid;
+    grid-template-columns: 1fr 1fr;       /* 2 kolom stack */
+    gap:8px 12px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow: var(--shadow);
+    padding:10px;
+  }
+  .table tbody tr:hover{ background:#fff }
+  .table td{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 4px; border:0;
+    color:#313a70;
+    word-break: break-word;
+  }
+  .table td::before{
+    content: attr(data-label);
+    flex:0 0 42%;
+    font-size:.78rem; font-weight:700; color:#6c75a2;
+  }
+}
+
   </style>
 </head>
 <body>
